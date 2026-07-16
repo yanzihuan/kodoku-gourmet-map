@@ -1,7 +1,13 @@
 "use client";
 
 import { CATEGORIES } from "@/data/categories";
-import { SOURCE, type Restaurant, type SeasonMeta } from "@/data";
+import {
+  SOURCE,
+  seriesMessageKey,
+  statusMessageKey,
+  type Restaurant,
+  type SeasonMeta,
+} from "@/data";
 import {
   CITY_OPTIONS,
   COUNTRY_OPTIONS,
@@ -73,32 +79,49 @@ export default function Sidebar({
       <header className="side-head">
         <div className="side-head-top">
           <div className="title-jp">孤独のグルメ</div>
-          <label className="language-picker">
-            <span className="sr-only">{messages.languageLabel}</span>
-            <select
-              value={locale}
-              onChange={(event) => onLocale(event.target.value as Locale)}
-              aria-label={messages.languageLabel}
+          <div className="side-head-actions">
+            <label className="language-picker">
+              <span className="sr-only">{messages.language_label}</span>
+              <select
+                value={locale}
+                onChange={(event) => onLocale(event.target.value as Locale)}
+                aria-label={messages.language_label}
+              >
+                {LOCALES.map((value) => (
+                  <option key={value} value={value} lang={value}>
+                    {MESSAGES[value].locale_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <a
+              className="github-link"
+              href="https://github.com/Janlaywss/kodoku-gourmet-map"
+              target="_blank"
+              rel="noreferrer"
+              aria-label={messages.github_label}
+              title={messages.github_label}
             >
-              {LOCALES.map((value) => (
-                <option key={value} value={value} lang={value}>
-                  {MESSAGES[value].localeName}
-                </option>
-              ))}
-            </select>
-          </label>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12 1C5.923 1 1 5.923 1 12c0 4.867 3.149 8.979 7.521 10.436.55.096.756-.233.756-.522 0-.262-.013-1.128-.013-2.049-2.764.509-3.479-.674-3.699-1.293-.124-.317-.66-1.293-1.128-1.554-.385-.206-.935-.715-.014-.729.866-.014 1.485.797 1.691 1.128.99 1.663 2.571 1.196 3.204.907.096-.715.385-1.196.701-1.485-2.475-.275-5.06-1.238-5.06-5.5 0-1.21.426-2.2 1.128-2.97-.11-.275-.495-1.402.11-2.929 0 0 .921-.288 3.025 1.128A10.193 10.193 0 0 1 12 6.861c.935 0 1.87.124 2.75.371 2.104-1.43 3.025-1.128 3.025-1.128.605 1.527.22 2.654.11 2.929.701.77 1.127 1.746 1.127 2.97 0 4.276-2.599 5.225-5.073 5.5.399.344.743 1.004.743 2.035 0 1.471-.014 2.654-.014 3.025 0 .289.206.632.77.522A11.01 11.01 0 0 0 23 12C23 5.923 18.077 1 12 1Z"
+                />
+              </svg>
+            </a>
+          </div>
         </div>
         <h1>{messages.title}</h1>
         <p className="subtitle">{messages.subtitle(total, filtered.length)}</p>
         <div className="source-summary">
           <div className="source-summary-title">
-            <span>{messages.sourceLabel}：</span>
+            <span>{messages.source_label}：</span>
             <a href={SOURCE.url} target="_blank" rel="noreferrer">
               {SOURCE.title}
             </a>
           </div>
           <div className="source-summary-meta">
-            {SOURCE.updated && `${messages.sourceUpdated(SOURCE.updated)} · `}
+            {SOURCE.updated && `${messages.source_updated(SOURCE.updated)} · `}
             {messages.footer}
           </div>
         </div>
@@ -108,8 +131,8 @@ export default function Sidebar({
         <input
           className="search"
           type="search"
-          placeholder={messages.searchPlaceholder}
-          aria-label={messages.searchPlaceholder}
+          placeholder={messages.search_placeholder}
+          aria-label={messages.search_placeholder}
           value={filters.query}
           onChange={(e) => onFilters({ ...filters, query: e.target.value })}
         />
@@ -117,7 +140,7 @@ export default function Sidebar({
 
       <div className="side-section">
         <div className="section-head">
-          <span>{messages.sectionLocation}</span>
+          <span>{messages.section_location}</span>
           {hasLocationFilter && (
             <button
               className="clear-btn"
@@ -137,7 +160,7 @@ export default function Sidebar({
         </div>
         <div className="geo-filters">
           <label className="geo-field geo-country">
-            <span>{messages.countryLabel}</span>
+            <span>{messages.country_label}</span>
             <select
               value={filters.country}
               onChange={(event) =>
@@ -150,7 +173,7 @@ export default function Sidebar({
                 })
               }
             >
-              <option value="">{messages.allCountries}</option>
+              <option value="">{messages.all_countries}</option>
               {COUNTRY_OPTIONS.map((country) => (
                 <option key={country.code} value={country.code}>
                   {countryNames.of(country.code) ?? country.code} ({country.count})
@@ -160,7 +183,7 @@ export default function Sidebar({
           </label>
           {filters.country === "JP" && (
             <label className="geo-field geo-region">
-              <span>{messages.regionLabel}</span>
+              <span>{messages.region_label}</span>
               <select
                 value={filters.region}
                 onChange={(event) =>
@@ -172,17 +195,17 @@ export default function Sidebar({
                   })
                 }
               >
-                <option value="">{messages.allRegions}</option>
+                <option value="">{messages.all_regions}</option>
                 {regionOptions.map((region) => (
                   <option key={region.id} value={region.id}>
-                    {messages.japanRegions[region.code]} ({region.count})
+                    {messages.japan_regions[region.code]} ({region.count})
                   </option>
                 ))}
               </select>
             </label>
           )}
           <label className="geo-field">
-            <span>{messages.cityLabel}</span>
+            <span>{messages.city_label}</span>
             <select
               value={filters.city}
               disabled={!filters.country}
@@ -194,7 +217,7 @@ export default function Sidebar({
                 })
               }
             >
-              <option value="">{messages.allCities}</option>
+              <option value="">{messages.all_cities}</option>
               {cityOptions.map((city) => (
                 <option key={city.id} value={city.id}>
                   {city.label} ({city.count})
@@ -203,7 +226,7 @@ export default function Sidebar({
             </select>
           </label>
           <label className="geo-field">
-            <span>{messages.districtLabel}</span>
+            <span>{messages.district_label}</span>
             <select
               value={filters.district}
               disabled={!filters.city}
@@ -211,7 +234,7 @@ export default function Sidebar({
                 onFilters({ ...filters, district: event.target.value })
               }
             >
-              <option value="">{messages.allDistricts}</option>
+              <option value="">{messages.all_districts}</option>
               {districtOptions.map((district) => (
                 <option key={district.id} value={district.id}>
                   {district.label} ({district.count})
@@ -224,7 +247,7 @@ export default function Sidebar({
 
       <div className="side-section">
         <div className="section-head">
-          <span>{messages.sectionCategory}</span>
+          <span>{messages.section_category}</span>
           {filters.categories.size > 0 && (
             <button
               className="clear-btn"
@@ -255,7 +278,7 @@ export default function Sidebar({
                 }
               >
                 <i className="dot" />
-                {c.emoji} {messages.categories[c.name] ?? c.name}
+                {c.emoji} {messages.categories[c.key]}
                 <em>{count}</em>
               </button>
             );
@@ -265,7 +288,7 @@ export default function Sidebar({
 
       <div className="side-section">
         <div className="section-head">
-          <span>{messages.sectionSeason}</span>
+          <span>{messages.section_season}</span>
           {filters.seasons.size > 0 && (
             <button
               className="clear-btn"
@@ -276,19 +299,22 @@ export default function Sidebar({
           )}
         </div>
         <div className="chips chips-season">
-          {allSeasons.map((s) => (
-            <button
-              key={s.key}
-              className={`chip chip-plain${
-                filters.seasons.has(s.key) ? " chip-on" : ""
-              }`}
-              onClick={() =>
-                onFilters({ ...filters, seasons: toggle(filters.seasons, s.key) })
-              }
-            >
-              {messages.series[s.key as keyof typeof messages.series] ?? s.num}
-            </button>
-          ))}
+          {allSeasons.map((s) => {
+            const message_key = seriesMessageKey(s.key);
+            return (
+              <button
+                key={s.key}
+                className={`chip chip-plain${
+                  filters.seasons.has(s.key) ? " chip-on" : ""
+                }`}
+                onClick={() =>
+                  onFilters({ ...filters, seasons: toggle(filters.seasons, s.key) })
+                }
+              >
+                {message_key ? messages.series[message_key] : s.num}
+              </button>
+            );
+          })}
         </div>
         <label className="open-only">
           <input
@@ -296,13 +322,13 @@ export default function Sidebar({
             checked={filters.openOnly}
             onChange={(e) => onFilters({ ...filters, openOnly: e.target.checked })}
           />
-          {messages.openOnly}
+          {messages.open_only}
         </label>
       </div>
 
       <div className="side-section list-section">
         <div className="section-head">
-          <span>{messages.sectionList}</span>
+          <span>{messages.section_list}</span>
         </div>
         <ul className="rlist">
           {filtered.map((r) => {
@@ -332,11 +358,11 @@ export default function Sidebar({
                   </span>
                   <span className="ritem-right">
                     <span className="ritem-ep">
-                      {messages.episodeBadge(r.seasonKey, r.episode)}
+                      {messages.episode_badge(r.seasonKey, r.episode)}
                     </span>
                     {r.status === "已闭店" && (
                       <span className="ritem-st">
-                        {messages.status[r.status]}
+                        {messages.status[statusMessageKey(r.status)]}
                       </span>
                     )}
                   </span>

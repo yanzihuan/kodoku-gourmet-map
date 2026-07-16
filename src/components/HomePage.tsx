@@ -116,9 +116,9 @@ export default function HomePage({ initialLocale }: { initialLocale: Locale }) {
       <button
         className="side-toggle"
         onClick={() => setSideOpen((v) => !v)}
-        aria-label={sideOpen ? messages.toggleClose : messages.toggleOpen}
+        aria-label={sideOpen ? messages.toggle_close : messages.toggle_open}
       >
-        {sideOpen ? messages.toggleClose : messages.toggleOpen}
+        {sideOpen ? messages.toggle_close : messages.toggle_open}
       </button>
       <div className={`side-holder${sideOpen ? " side-open" : ""}`}>
         <Sidebar
