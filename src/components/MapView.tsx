@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
-import type { Restaurant } from "@/data";
-import { categoryColor, categoryEmoji } from "@/data/categories";
+import { statusMessageKey, type Restaurant } from "@/data";
+import { categoryColor, categoryEmoji, categoryKey } from "@/data/categories";
 import type { Locale, Messages } from "@/i18n/messages";
 
 const TOKYO_CENTER: [number, number] = [139.751, 35.685];
@@ -59,13 +59,13 @@ function popupContent(
     element(
       "span",
       "badge badge-ep",
-      messages.episodeBadge(restaurant.seasonKey, restaurant.episode),
+      messages.episode_badge(restaurant.seasonKey, restaurant.episode),
     ),
   );
   const category = element(
     "span",
     "badge badge-cat",
-    messages.categories[restaurant.category] ?? restaurant.category,
+    messages.categories[categoryKey(restaurant.category)],
   );
   category.style.background = categoryColor(restaurant.category);
   badges.append(category);
@@ -73,15 +73,15 @@ function popupContent(
     element(
       "span",
       `badge badge-st ${statusClass(restaurant.status)}`,
-      messages.status[restaurant.status],
+      messages.status[statusMessageKey(restaurant.status)],
     ),
   );
   root.append(badges);
 
   const rows: Array<[string, string | undefined]> = [
-    [messages.popDish, text?.dish ?? restaurant.dish],
-    [messages.popAddress, text?.address ?? restaurant.address],
-    [messages.popNotes, text?.notes ?? restaurant.notes],
+    [messages.pop_dish, text?.dish ?? restaurant.dish],
+    [messages.pop_address, text?.address ?? restaurant.address],
+    [messages.pop_notes, text?.notes ?? restaurant.notes],
   ];
   for (const [label, value] of rows) {
     if (!value) continue;
@@ -93,13 +93,13 @@ function popupContent(
   const links = element("div", "pop-links");
   const linkData = [
     [
-      messages.popGoogle,
+      messages.pop_google,
       `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
         `${restaurant.name} ${restaurant.address}`,
       )}`,
     ],
     [
-      messages.popTabelog,
+      messages.pop_tabelog,
       `https://tabelog.com/rstLst/?sw=${encodeURIComponent(restaurant.name)}`,
     ],
   ];
@@ -385,7 +385,7 @@ export default function MapView({
       <div ref={containerRef} className="map" />
       {!ready && (
         <div className="map-loading map-loading-overlay" role="status">
-          {error ? messages.mapError : messages.mapLoading}
+          {error ? messages.map_error : messages.map_loading}
         </div>
       )}
       {ready && (
@@ -396,10 +396,10 @@ export default function MapView({
               mapRef.current?.flyTo({ center: TOKYO_CENTER, zoom: 10.5, essential: true })
             }
           >
-            {messages.mapTokyo}
+            {messages.map_tokyo}
           </button>
           <button type="button" onClick={fitAll}>
-            {messages.mapFitAll}
+            {messages.map_fit_all}
           </button>
         </div>
       )}
