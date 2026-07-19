@@ -73,9 +73,6 @@ jobs:
 
             gunzip -c /tmp/artifacts/images.tar.gz 2>/dev/null | docker load || true
 
-            docker compose up -d --no-deps
-            docker image prune -f
-
             rm -rf /tmp/deploy-tmp /tmp/artifacts /tmp/deploy-bundle.tar.gz
         env:
           SITE_URL: ${{ vars.SITE_URL }}
