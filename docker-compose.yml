@@ -1,5 +1,6 @@
 services:
   app:
+    image: kodoku-gourmet-map
     container_name: kodoku-gourmet-map
     restart: unless-stopped
     ports:
