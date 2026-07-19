@@ -1,0 +1,18 @@
+services:
+  app:
+    build: .
+    container_name: kodoku-gourmet-map
+    restart: unless-stopped
+    ports:
+      - "8989:3000"
+    environment:
+      - NODE_ENV=production
+      - SITE_URL=${SITE_URL}
+      # Optional: override the default map style
+      # - NEXT_PUBLIC_MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/zh-CN"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

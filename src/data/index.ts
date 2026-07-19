@@ -1,14 +1,21 @@
 import raw from "./restaurants.json";
 import type { Locale } from "@/i18n/messages";
 
-export type RestaurantStatus = "营业中" | "已闭店" | "不确定";
+export const STATUS_OPEN = "营业中" as const;
+export const STATUS_CLOSED = "已闭店" as const;
+export const STATUS_UNKNOWN = "不确定" as const;
+
+export type RestaurantStatus =
+  | typeof STATUS_OPEN
+  | typeof STATUS_CLOSED
+  | typeof STATUS_UNKNOWN;
 export type StatusMessageKey = "open" | "closed" | "unknown";
 export type SeriesMessageKey = "manga" | "special" | "streaming_original" | "each";
 
 const STATUS_MESSAGE_KEYS: Record<RestaurantStatus, StatusMessageKey> = {
-  营业中: "open",
-  已闭店: "closed",
-  不确定: "unknown",
+  [STATUS_OPEN]: "open",
+  [STATUS_CLOSED]: "closed",
+  [STATUS_UNKNOWN]: "unknown",
 };
 
 const SERIES_MESSAGE_KEYS: Partial<Record<string, SeriesMessageKey>> = {
@@ -95,10 +102,6 @@ export const SEASONS: SeasonMeta[] = seasons.map((s) => ({
   label: s.label,
   count: s.restaurants.length,
 }));
-
-export function episodeBadge(r: Restaurant): string {
-  return r.seasonKey === "SP" ? `SP·${r.episode}` : `${r.seasonKey} 第${r.episode}集`;
-}
 
 export function statusMessageKey(status: RestaurantStatus): StatusMessageKey {
   return STATUS_MESSAGE_KEYS[status];

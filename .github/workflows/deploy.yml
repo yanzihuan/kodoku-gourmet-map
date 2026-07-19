@@ -1,0 +1,82 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: kodoku-gourmet-map
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: docker build -t ${{ env.DOCKER_IMAGE }}:latest .
+
+      - name: Save image
+        run: |
+          mkdir -p artifacts
+          docker save ${{ env.DOCKER_IMAGE }}:latest | gzip > artifacts/images.tar.gz
+
+      - name: Prepare deploy bundle
+        run: |
+          mkdir -p deploy-bundle
+          cp docker-compose.yml deploy-bundle/
+          tar czf deploy-bundle.tar.gz -C deploy-bundle .
+
+      - name: Copy deploy bundle to server
+        uses: appleboy/scp-action@v0.1.6
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: deploy-bundle.tar.gz
+          target: /tmp/
+
+      - name: Copy images to server
+        uses: appleboy/scp-action@v0.1.6
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: artifacts/images.tar.gz
+          target: /tmp/
+
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: SITE_URL
+          script: |
+            set -e
+            cd /tmp
+            rm -rf deploy-tmp
+            mkdir -p deploy-tmp
+            tar xzf /tmp/deploy-bundle.tar.gz -C deploy-tmp/
+            cd "$DEPLOY_PATH"
+
+            cp /tmp/deploy-tmp/docker-compose.yml .
+
+            # Inject runtime env vars for docker compose
+            cat > .env <<DOTENV
+            SITE_URL=${SITE_URL}
+            DOTENV
+
+            gunzip -c /tmp/artifacts/images.tar.gz 2>/dev/null | docker load || true
+
+            docker compose up -d --no-deps
+            docker image prune -f
+
+            rm -rf /tmp/deploy-tmp /tmp/artifacts /tmp/deploy-bundle.tar.gz
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}

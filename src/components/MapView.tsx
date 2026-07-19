@@ -1,20 +1,31 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import mapboxgl from "mapbox-gl";
+import maplibregl from "maplibre-gl";
 import { statusMessageKey, type Restaurant } from "@/data";
+import { STATUS_OPEN, STATUS_CLOSED } from "@/data";
 import { categoryColor, categoryEmoji, categoryKey } from "@/data/categories";
 import type { Locale, Messages } from "@/i18n/messages";
 
 const TOKYO_CENTER: [number, number] = [139.751, 35.685];
-const DEFAULT_STYLE = "mapbox://styles/mapbox/streets-v12";
+const DEFAULT_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const CLOSED_MARKER_COLOR = "#8d8a84";
 const HOVER_CLOSE_DELAY = 180;
 
-function mapLanguage(locale: Locale): string {
-  if (locale === "zh-CN") return "zh-Hans";
-  if (locale === "zh-TW" || locale === "zh-HK") return "zh-Hant";
-  return locale;
+/* 根据 locale 构造地图标签字段表达式，优先取对应语言名称，回退到日语 */
+function nameFieldForLocale(locale: Locale): unknown[] {
+  switch (locale) {
+    case "ja":
+      return ["coalesce", ["get", "name:ja"], ["get", "name:nonlatin"], ["get", "name"]];
+    case "en":
+      return ["coalesce", ["get", "name:en"], ["get", "name:latin"], ["get", "name"]];
+    case "zh-CN":
+    case "zh-TW":
+    case "zh-HK":
+      return ["coalesce", ["get", "name:zh"], ["get", "name:ja"], ["get", "name:nonlatin"], ["get", "name"]];
+    case "ko":
+      return ["coalesce", ["get", "name:ko"], ["get", "name:ja"], ["get", "name:nonlatin"], ["get", "name"]];
+  }
 }
 
 function element<K extends keyof HTMLElementTagNameMap>(
@@ -29,8 +40,8 @@ function element<K extends keyof HTMLElementTagNameMap>(
 }
 
 function statusClass(status: Restaurant["status"]): string {
-  if (status === "营业中") return "st-open";
-  if (status === "已闭店") return "st-closed";
+  if (status === STATUS_OPEN) return "st-open";
+  if (status === STATUS_CLOSED) return "st-closed";
   return "st-unknown";
 }
 
@@ -40,7 +51,7 @@ function popupContent(
   messages: Messages,
 ): HTMLElement {
   const text = restaurant.i18n?.[locale];
-  const root = element("div", "pop mapbox-pop");
+  const root = element("div", "pop maplibre-pop");
   const head = element("div", "pop-head");
   const emoji = element("div", "pop-emoji", categoryEmoji(restaurant.category));
   emoji.style.background = categoryColor(restaurant.category);
@@ -130,7 +141,6 @@ export default function MapView({
   onSelect,
   locale,
   messages,
-  accessToken,
   styleUrl = DEFAULT_STYLE,
 }: {
   restaurants: Restaurant[];
@@ -138,26 +148,24 @@ export default function MapView({
   onSelect: (id: string | null) => void;
   locale: Locale;
   messages: Messages;
-  accessToken: string;
   styleUrl?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const popupRef = useRef<mapboxgl.Popup | null>(null);
-  const hoverPopupRef = useRef<mapboxgl.Popup | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
+  const hoverPopupRef = useRef<maplibregl.Popup | null>(null);
   const hoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const markersRef = useRef(new Map<string, mapboxgl.Marker>());
+  const markersRef = useRef(new Map<string, maplibregl.Marker>());
   const onSelectRef = useRef(onSelect);
-  const initialLocaleRef = useRef(locale);
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState(!accessToken);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     onSelectRef.current = onSelect;
   }, [onSelect]);
 
   useEffect(() => {
-    if (!accessToken || !containerRef.current) {
+    if (!containerRef.current) {
       setError(true);
       return;
     }
@@ -166,20 +174,15 @@ export default function MapView({
     setReady(false);
     setError(false);
 
-    const map = new mapboxgl.Map({
-      accessToken,
+    const map = new maplibregl.Map({
       container: containerRef.current,
       style: styleUrl,
       center: TOKYO_CENTER,
       zoom: 10.5,
-      language: mapLanguage(initialLocaleRef.current),
-      localIdeographFontFamily:
-        '"Hiragino Sans", "PingFang SC", "Noto Sans CJK JP", sans-serif',
-      attributionControl: true,
-      respectPrefersReducedMotion: true,
+      attributionControl: {},
     });
     mapRef.current = map;
-    const popup = new mapboxgl.Popup({
+    const popup = new maplibregl.Popup({
       closeButton: true,
       closeOnClick: false,
       className: "restaurant-detail",
@@ -192,8 +195,8 @@ export default function MapView({
     popup.on("close", handlePopupClose);
     popupRef.current = popup;
 
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), "top-right");
-    map.addControl(new mapboxgl.ScaleControl({ maxWidth: 100 }), "bottom-right");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "top-right");
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 100 }), "bottom-right");
 
     const handleLoad = () => {
       if (!active) return;
@@ -203,12 +206,12 @@ export default function MapView({
     const handleError = () => {
       if (active && !map.loaded()) setError(true);
     };
-    const handleMapClick = (event: mapboxgl.MapMouseEvent) => {
+    const handleMapClick = (event: maplibregl.MapMouseEvent) => {
       const target = event.originalEvent.target;
       if (
         target instanceof Element &&
         target.closest(
-          ".mapboxgl-marker, .mapboxgl-popup, .map-actions, .mapboxgl-control-container",
+          ".maplibregl-marker, .maplibregl-popup, .map-actions, .maplibregl-control-container",
         )
       ) {
         return;
@@ -241,12 +244,22 @@ export default function MapView({
       map.remove();
       mapRef.current = null;
     };
-  }, [accessToken, styleUrl]);
+  }, [styleUrl]);
 
+  /* 切换 locale 时更新地图标签语言 */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    map.setLanguage(mapLanguage(locale));
+
+    const field = nameFieldForLocale(locale);
+    const style = map.getStyle();
+    if (!style?.layers) return;
+
+    for (const layer of style.layers) {
+      if (layer.type === "symbol" && "layout" in layer && layer.layout?.["text-field"]) {
+        map.setLayoutProperty(layer.id, "text-field", field);
+      }
+    }
   }, [locale, ready]);
 
   useEffect(() => {
@@ -283,13 +296,13 @@ export default function MapView({
     for (const restaurant of restaurants) {
       const pin = element(
         "button",
-        "gpin mapbox-gpin",
+        "gpin maplibre-gpin",
         categoryEmoji(restaurant.category),
       );
       pin.type = "button";
       pin.title = restaurant.name;
       pin.setAttribute("aria-label", restaurant.name);
-      if (restaurant.status === "已闭店") {
+      if (restaurant.status === STATUS_CLOSED) {
         pin.style.setProperty("--c", CLOSED_MARKER_COLOR);
         pin.classList.add("gpin-closed");
       } else {
@@ -301,7 +314,7 @@ export default function MapView({
           return;
         }
         closeHoverPopup();
-        const hoverPopup = new mapboxgl.Popup({
+        const hoverPopup = new maplibregl.Popup({
           closeButton: false,
           closeOnClick: false,
           className: "restaurant-tip",
@@ -322,7 +335,7 @@ export default function MapView({
         onSelectRef.current(restaurant.id);
       });
 
-      const marker = new mapboxgl.Marker({ element: pin, anchor: "center" })
+      const marker = new maplibregl.Marker({ element: pin, anchor: "center" })
         .setLngLat([restaurant.lng, restaurant.lat])
         .addTo(map);
       markersRef.current.set(restaurant.id, marker);
@@ -373,7 +386,7 @@ export default function MapView({
   const fitAll = () => {
     const map = mapRef.current;
     if (!map || restaurants.length === 0) return;
-    const bounds = new mapboxgl.LngLatBounds();
+    const bounds = new maplibregl.LngLatBounds();
     for (const restaurant of restaurants) {
       bounds.extend([restaurant.lng, restaurant.lat]);
     }

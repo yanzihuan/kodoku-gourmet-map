@@ -5,6 +5,7 @@ import {
   SOURCE,
   seriesMessageKey,
   statusMessageKey,
+  STATUS_CLOSED,
   type Restaurant,
   type SeasonMeta,
 } from "@/data";
@@ -96,7 +97,7 @@ export default function Sidebar({
             </label>
             <a
               className="github-link"
-              href="https://github.com/Janlaywss/kodoku-gourmet-map"
+              href="https://github.com/yanzihuan/kodoku-gourmet-map"
               target="_blank"
               rel="noreferrer"
               aria-label={messages.github_label}
@@ -220,7 +221,7 @@ export default function Sidebar({
               <option value="">{messages.all_cities}</option>
               {cityOptions.map((city) => (
                 <option key={city.id} value={city.id}>
-                  {city.label} ({city.count})
+                  {city.label === "その他" ? messages.other_location : city.label} ({city.count})
                 </option>
               ))}
             </select>
@@ -237,7 +238,7 @@ export default function Sidebar({
               <option value="">{messages.all_districts}</option>
               {districtOptions.map((district) => (
                 <option key={district.id} value={district.id}>
-                  {district.label} ({district.count})
+                  {district.label === "その他" ? messages.other_location : district.label} ({district.count})
                 </option>
               ))}
             </select>
@@ -337,7 +338,7 @@ export default function Sidebar({
               <li key={r.id}>
                 <button
                   className={`ritem${r.id === selectedId ? " ritem-on" : ""}${
-                    r.status === "已闭店" ? " ritem-closed" : ""
+                    r.status === STATUS_CLOSED ? " ritem-closed" : ""
                   }`}
                   onClick={() => onSelect(r.id)}
                 >
@@ -360,7 +361,7 @@ export default function Sidebar({
                     <span className="ritem-ep">
                       {messages.episode_badge(r.seasonKey, r.episode)}
                     </span>
-                    {r.status === "已闭店" && (
+                    {r.status === STATUS_CLOSED && (
                       <span className="ritem-st">
                         {messages.status[statusMessageKey(r.status)]}
                       </span>

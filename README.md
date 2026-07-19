@@ -6,14 +6,14 @@ A public interactive map of locations featured in the *Kodoku no Gourmet* (`孤�
 
 ## Features
 
-- **Global vector map:** Mapbox GL JS 3 with the two-dimensional Mapbox Streets basemap
+- **Global vector map:** MapLibre GL JS with OpenFreeMap Liberty vector tiles (no token required)
 - **274 source locations:** Covers the manga, Seasons 1–10, specials, streaming originals, and *それぞれの孤独のグルメ*
 - **Linked location filters:** Filter by country or region → Japan region (when Japan is selected) → city → district, as well as series, season, cuisine category, and operating status
 - **Search:** Find places by restaurant name, dish, area, or address
 - **Open locations by default:** The “marked as open only” filter is enabled initially and can be turned off at any time
 - **Place details:** View the episode, dish, address, source notes, Google Maps search, and Tabelog search
 - **Six-language interface:** 日本語, English, 繁體中文（台灣）, 繁體中文（香港）, 简体中文, and 한국어
-- **Localized basemap labels:** Mapbox place labels follow the selected site language
+- **Localized basemap labels:** Map labels follow the selected site language via OpenMapTiles multi-language data
 - **International SEO:** Prerendered locale URLs, localized metadata, hreflang, canonical URLs, structured data, sitemap, robots rules, and a dedicated social card
 - **Responsive layout:** Side-by-side map and sidebar on desktop, with a collapsible filter and place list on mobile
 - **Visible attribution:** The source map, source date, and opening-hours warning are shown prominently in the sidebar
@@ -23,7 +23,7 @@ A public interactive map of locations featured in the *Kodoku no Gourmet* (`孤�
 - Next.js 16 App Router
 - React 19
 - TypeScript
-- Mapbox GL JS 3
+- MapLibre GL JS
 - Plain CSS
 
 ## Local Development
@@ -32,9 +32,8 @@ A public interactive map of locations featured in the *Kodoku no Gourmet* (`孤�
 
 - Node.js `>= 20.9.0`
 - npm
-- A Mapbox account and a Public Token beginning with `pk.`
 
-Create a token from [Mapbox Access Tokens](https://console.mapbox.com/account/access-tokens/). For production, create a dedicated Public Token and restrict it to the local and production domains. Never expose a Secret Token beginning with `sk.` in frontend code.
+No token or registration is required — the map uses free OpenFreeMap tiles by default.
 
 ### 2. Install dependencies
 
@@ -47,15 +46,15 @@ npm install
 Copy `.env.example` to `.env.local` in the project root:
 
 ```env
-NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.your_public_token
-NEXT_PUBLIC_MAPBOX_STYLE_URL=mapbox://styles/mapbox/streets-v12
 SITE_URL=https://example.com
+
+# Optional: override the default map style (defaults to OpenFreeMap Liberty)
+# NEXT_PUBLIC_MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty
 ```
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` | Yes | Mapbox Public Token used by the browser map |
-| `NEXT_PUBLIC_MAPBOX_STYLE_URL` | No | Mapbox Style URL; defaults to the two-dimensional `streets-v12` style |
+| `NEXT_PUBLIC_MAP_STYLE_URL` | No | Custom MapLibre-compatible style URL; defaults to OpenFreeMap Liberty |
 | `SITE_URL` | In production | Public site origin used for canonical, hreflang, sitemap, and social metadata URLs |
 
 These variables are included in the client bundle at build time. Restart the development server after changing them, and rebuild the site on the deployment platform.
@@ -80,23 +79,14 @@ npm start
 The default map style is:
 
 ```text
-mapbox://styles/mapbox/streets-v12
+https://tiles.openfreemap.org/styles/liberty
 ```
 
-Site languages map to Mapbox label languages as follows:
+Map labels are dynamically switched to match the site language, using OpenMapTiles multi-language name fields (`name:ja`, `name:en`, `name:zh`, `name:ko`) with a fallback to the local name.
 
-| Site language | Locale | Mapbox labels |
-| --- | --- | --- |
-| 日本語 | `ja` | `ja` |
-| English | `en` | `en` |
-| 繁體中文（台灣） | `zh-TW` | `zh-Hant` |
-| 繁體中文（香港） | `zh-HK` | `zh-Hant` |
-| 简体中文 | `zh-CN` | `zh-Hans` |
-| 한국어 | `ko` | `ko` |
+Interface copy is centralized in `src/i18n/messages.ts`, with search metadata in `src/i18n/seo.ts`. Update all six locales whenever user-visible or search-facing text changes. Each locale has its own indexable URL (`/en`, `/ja`, `/zh-CN`, `/zh-TW`, `/zh-HK`, `/ko`) with reciprocal hreflang links. The root URL follows the browser language; a language selected manually is stored in LocalStorage and a cookie, then restored on later visits.
 
-Interface copy is centralized in `src/i18n/messages.ts`, with search metadata in `src/i18n/seo.ts`. Update all six locales whenever user-visible or search-facing text changes. Each locale has its own indexable URL (`/en`, `/ja`, `/zh-CN`, `/zh-TW`, `/zh-HK`, `/ko`) with reciprocal hreflang links. The root URL follows the browser language; a language selected manually is stored in LocalStorage and a cookie, then restored on later visits. Mapbox falls back to local place names when a requested translation is unavailable.
-
-Mapbox charges by map usage, and pricing or allowances may change. Review the [official Mapbox pricing page](https://www.mapbox.com/pricing) and monitor usage before a public launch. Do not remove or cover the Mapbox/OpenStreetMap attribution in the lower-right corner.
+The map is powered by free OpenFreeMap tiles. Do not remove or cover the OpenStreetMap attribution in the lower-right corner.
 
 ## Data Source
 
@@ -128,15 +118,15 @@ The sync command downloads the KML over the network and fully rewrites `src/data
 ```text
 src/
 ├── app/
-│   ├── globals.css          # Global, responsive, and Mapbox styles
+│   ├── globals.css          # Global, responsive, and MapLibre styles
 │   ├── [locale]/page.tsx    # Localized HTML, metadata, and structured data
-│   ├── layout.tsx           # Root layout, metadata base, and Mapbox CSS
+│   ├── layout.tsx           # Root layout, metadata base, and MapLibre CSS
 │   ├── page.tsx             # Browser/preference locale redirect
 │   ├── robots.ts            # Search crawler rules
 │   └── sitemap.ts           # Localized sitemap and hreflang entries
 ├── components/
 │   ├── HomePage.tsx         # Interactive page state, filters, and locale routing
-│   ├── MapView.tsx          # Mapbox map, markers, popups, and label language
+│   ├── MapView.tsx          # MapLibre map, markers, popups, and label language
 │   └── Sidebar.tsx          # Search, filters, place list, and attribution
 ├── data/
 │   ├── categories.ts        # Cuisine categories, colors, and icons

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "mapbox-gl/dist/mapbox-gl.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { Analytics } from "@vercel/analytics/next";
 import { LOCALES } from "@/i18n/messages";
 import { LOCALE_COOKIE_KEY, LOCALE_STORAGE_KEY } from "@/i18n/routing";

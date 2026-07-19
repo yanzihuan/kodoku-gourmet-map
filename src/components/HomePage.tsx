@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import Sidebar, { type Filters } from "@/components/Sidebar";
-import { RESTAURANTS, SEASONS, type Restaurant } from "@/data";
+import { RESTAURANTS, SEASONS, STATUS_OPEN, type Restaurant } from "@/data";
 import { GEOGRAPHY_BY_ID } from "@/data/geography";
 import { MESSAGES, type Locale } from "@/i18n/messages";
 import {
@@ -17,9 +17,7 @@ const MapView = dynamic(() => import("@/components/MapView"), {
   loading: () => <div className="map-loading">…</div>,
 });
 
-const MAPBOX_ACCESS_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "";
-const MAPBOX_STYLE_URL =
-  process.env.NEXT_PUBLIC_MAPBOX_STYLE_URL ?? "mapbox://styles/mapbox/streets-v12";
+const MAP_STYLE_URL = process.env.NEXT_PUBLIC_MAP_STYLE_URL;
 
 function matchQuery(r: Restaurant, q: string): boolean {
   if (!q) return true;
@@ -87,7 +85,7 @@ export default function HomePage({ initialLocale }: { initialLocale: Locale }) {
         return false;
       if (filters.seasons.size > 0 && !filters.seasons.has(r.seasonKey))
         return false;
-      if (filters.openOnly && r.status !== "营业中") return false;
+      if (filters.openOnly && r.status !== STATUS_OPEN) return false;
       return matchQuery(r, q);
     });
   }, [filters]);
@@ -99,7 +97,7 @@ export default function HomePage({ initialLocale }: { initialLocale: Locale }) {
     for (const r of RESTAURANTS) {
       if (!matchGeography(r, filters)) continue;
       if (filters.seasons.size > 0 && !filters.seasons.has(r.seasonKey)) continue;
-      if (filters.openOnly && r.status !== "营业中") continue;
+      if (filters.openOnly && r.status !== STATUS_OPEN) continue;
       if (!matchQuery(r, q)) continue;
       m.set(r.category, (m.get(r.category) ?? 0) + 1);
     }
@@ -141,8 +139,7 @@ export default function HomePage({ initialLocale }: { initialLocale: Locale }) {
         onSelect={handleSelect}
         locale={locale}
         messages={messages}
-        accessToken={MAPBOX_ACCESS_TOKEN}
-        styleUrl={MAPBOX_STYLE_URL}
+        styleUrl={MAP_STYLE_URL}
       />
     </div>
   );
